@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalog-query
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catalog-query
+  template:
+    metadata:
+      labels:
+        app: catalog-query
+    spec:
+      containers:
+        - name: catalog-query
+          image: h4mdi/catalog-query:latest
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "docker"
+            - name: CONFIG_SERVICE_USER
+              value: "cfguser"
+            - name: CONFIG_SERVICE_PASSWORD
+              value: "cfgpassword"
+            - name: EUREKA_USER
+              value: "user"
+            - name: POSTGRES_USER
+              value: "dbuser"
+            - name: POSTGRES_PASSWORD
+              value: "dbpass"  # Provide the correct password here
+            - name: MONGO_USER
+              value: "user"
+            - name: MONGO_PASSWORD
+              value: "pass"
+          ports:
+            - containerPort: 8080
+          resources: {}
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalog-query
+spec:
+  type: ClusterIP
+  ports:
+    - name: "8082"
+      port: 8082
+      targetPort: 8080
+  selector:
+    app: catalog-query

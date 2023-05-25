@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eshop-base
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: eshop-base
+  template:
+    metadata:
+      labels:
+        app: eshop-base
+    spec:
+      containers:
+        - name: eshop-base
+          image: h4mdi/eshop-base:latest
+          imagePullPolicy: IfNotPresent
