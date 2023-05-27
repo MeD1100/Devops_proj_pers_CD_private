@@ -1,6 +1,6 @@
 provider "aws" {
   profile = "PFE_Account_2"
-  region  = "us-west-3"
+  region  = "eu-west-3"
 }
 
 terraform {

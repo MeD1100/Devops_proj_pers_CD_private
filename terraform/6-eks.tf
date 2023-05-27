@@ -28,12 +28,7 @@ resource "aws_iam_role_policy_attachment" "amazon_eks_cluster_policy" {
 resource "aws_eks_cluster" "eks" {
   # Name of the cluster.
   name = "eks"
-
-  # The Amazon Resource Name (ARN) of the IAM role that provides permissions for 
-  # the Kubernetes control plane to make calls to AWS API operations on your behalf
   role_arn = aws_iam_role.eks_cluster.arn
-
-  # Desired Kubernetes master version
   version = "1.26"
 
   vpc_config {
