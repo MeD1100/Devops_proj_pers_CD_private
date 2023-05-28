@@ -1,78 +1,50 @@
 
-resource "aws_subnet" "public_1" {
-  #The VPC ID.
-  vpc_id = aws_vpc.main.id
-
-  #The CIDR block for the subnet
-  cidr_block = "192.168.0.0/18"
-
-  #The AZ for the subnet
-  availability_zone = "eu-west-3a"
-
-  #Required for EKS, instances launched into the subnet should be assisted with the public IP adress automatically.
-  map_public_ip_on_launch = true
-
-  #A map of tags to assign to the resource
-  tags = {
-    Name                        = "public-eu-west-3a"
-    "Kubernetes.io/cluster/eks" = "shared"
-    "kubernetes.io/role/elb"    = 1
-  }
-}
-
-resource "aws_subnet" "public_2" {
-  #The VPC ID.
-  vpc_id = aws_vpc.main.id
-
-  #The CIDR block for the subnet
-  cidr_block = "192.168.64.0/18"
-
-  #The AZ for the subnet
-  availability_zone = "eu-west-3b"
-
-  #Required for EKS, instances launched into the subnet should be assisted with the public IP adress automatically.
-  map_public_ip_on_launch = true
-
-  #A map of tags to assign to the resource
-  tags = {
-    Name                        = "public-eu-west-3b"
-    "Kubernetes.io/cluster/eks" = "shared"
-    "kubernetes.io/role/elb"    = 1
-  }
-}
-
 resource "aws_subnet" "private_1" {
-  #The VPC ID.
   vpc_id = aws_vpc.main.id
-
-  #The CIDR block for the subnet
-  cidr_block = "192.168.128.0/18"
-
-  #The AZ for the subnet
+  cidr_block = "10.0.0.0/19"
   availability_zone = "eu-west-3a"
 
-  #A map of tags to assign to the resource
   tags = {
     Name                              = "private-eu-west-3a"
-    "Kubernetes.io/cluster/eks"       = "shared"
+    "Kubernetes.io/cluster/eks"       = "owned"
     "kubernetes.io/role/internal-elb" = 1
   }
 }
 
 resource "aws_subnet" "private_2" {
-  #The VPC ID.
   vpc_id = aws_vpc.main.id
-
-  #The CIDR block for the subnet
-  cidr_block = "192.168.192.0/18"
-
-  #The AZ for the subnet
+  cidr_block = "10.0.32.0/19"
   availability_zone = "eu-west-3b"
 
-  #A map of tags to assign to the resource
   tags = {
     Name                              = "private-eu-west-3b"
-    "Kubernetes.io/cluster/eks"       = "shared"
+    "Kubernetes.io/cluster/eks"       = "owned"
     "kubernetes.io/role/internal-elb" = 1
+  }
+}
+
+resource "aws_subnet" "public_1" {
+  vpc_id = aws_vpc.main.id
+  cidr_block = "10.0.64.0/19"
+  availability_zone = "eu-west-3a"
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name                        = "public-eu-west-3a"
+    "Kubernetes.io/cluster/eks" = "owned"
+    "kubernetes.io/role/elb"    = 1
+  }
+}
+
+resource "aws_subnet" "public_2" {
+  vpc_id = aws_vpc.main.id
+  cidr_block = "10.0.96.0/19"
+  availability_zone = "eu-west-3b"
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name                        = "public-eu-west-3b"
+    "Kubernetes.io/cluster/eks" = "owned"
+    "kubernetes.io/role/elb"    = 1
   }
 }

@@ -1,10 +1,10 @@
 provider "helm" {
   kubernetes {
-    host                   = aws_eks_cluster.eks.endpoint
-    cluster_ca_certificate = base64decode(aws_eks_cluster.eks.certificate_authority[0].data)
+    host                   = aws_eks_cluster.cluster.endpoint
+    cluster_ca_certificate = base64decode(aws_eks_cluster.cluster.certificate_authority[0].data)
     exec {
       api_version = "client.authentication.k8s.io/v1beta1"
-      args        = ["eks", "get-token", "--cluster-name", aws_eks_cluster.eks.id]
+      args        = ["eks", "get-token", "--cluster-name", aws_eks_cluster.cluster.name, "--profile", var.profile_name]
       command     = "aws"
     }
   }
@@ -20,7 +20,7 @@ resource "helm_release" "aws-load-balancer-controller" {
 
   set {
     name  = "clusterName"
-    value = aws_eks_cluster.eks.id
+    value = aws_eks_cluster.cluster.name
   }
 
   set {
@@ -35,7 +35,9 @@ resource "helm_release" "aws-load-balancer-controller" {
 
   set {
     name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
-    value = aws_iam_role.aws_load_balancer_controller.arn
+    value = "aws_iam_role.aws_load_balancer_controller.arn"
+    # value = aws_iam_role.aws_load_balancer_controller.arn
+    # arn:aws:iam::641921721037:role/aws-load-balancer-controller
   }
 
   depends_on = [

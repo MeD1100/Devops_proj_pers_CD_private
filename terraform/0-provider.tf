@@ -11,3 +11,15 @@ terraform {
     }
   }
 }
+
+variable "cluster_name" {
+  default = "demo2"
+}
+
+variable "profile_name"{
+  default = "PFE_Account_2"
+}
+
+variable "cluster_version" {
+  default = "1.22"
+}

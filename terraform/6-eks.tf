@@ -1,5 +1,6 @@
-resource "aws_iam_role" "eks_cluster" {
-  name = "eks-cluster"
+
+resource "aws_iam_role" "eks-cluster" {
+  name = "eks-cluster-${var.cluster_name}"
 
   assume_role_policy = <<POLICY
     {
@@ -18,27 +19,19 @@ POLICY
 }
 
 
-resource "aws_iam_role_policy_attachment" "amazon_eks_cluster_policy" {
+resource "aws_iam_role_policy_attachment" "amazon-eks-cluster-policy" {
 
   # https://github.com/SummitRoute/aws_managed_policies/blob/master/policies/AmazonEKSClusterPolicy
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
-  role       = aws_iam_role.eks_cluster.name
+  role       = aws_iam_role.eks-cluster.name
 }
 
-resource "aws_eks_cluster" "eks" {
-  # Name of the cluster.
-  name = "eks"
-  role_arn = aws_iam_role.eks_cluster.arn
-  version = "1.26"
+resource "aws_eks_cluster" "cluster" {
+  name     = var.cluster_name
+  version  = var.cluster_version
+  role_arn = aws_iam_role.eks-cluster.arn
 
   vpc_config {
-    # Indicates whether or not the Amazon EKS private API server endpoint is enabled
-    endpoint_private_access = false
-
-    # Indicates whether or not the Amazon EKS public API server endpoint is enabled
-    endpoint_public_access = true
-
-    # Must be in at least two different availability zones
     subnet_ids = [
       aws_subnet.public_1.id,
       aws_subnet.public_2.id,
@@ -47,9 +40,7 @@ resource "aws_eks_cluster" "eks" {
     ]
   }
 
-  # Ensure that IAM Role permissions are created before and deleted after EKS Cluster handling.
-  # Otherwise, EKS will not be able to properly delete EKS managed EC2 infrastructure such as Security Groups.
   depends_on = [
-    aws_iam_role_policy_attachment.amazon_eks_cluster_policy
+    aws_iam_role_policy_attachment.amazon-eks-cluster-policy
   ]
 }
