@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: prod-cluster
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose-global.yml --out k8s
+    kompose.version: 1.28.0 (c4137012e)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: discovery
+  name: discovery
+spec:
+  containers:
+    - env:
+        - name: CONFIG_SERVICE_PASSWORD
+          value: "cfg-password"
+        - name: CONFIG_SERVICE_USER
+          value: user
+        - name: EUREKA_USER
+          value: user
+        - name: SPRING_PROFILES_ACTIVE
+          value: docker
+      image: h4mdi/discovery
+      name: discovery
+      ports:
+        - containerPort: 8761
+      resources: {}
+  restartPolicy: OnFailure
+status: {}
+---
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose-global.yml --out k8s
+    kompose.version: 1.28.0 (c4137012e)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: discovery
+  name: discovery
+spec:
+  ports:
+    - name: "8761"
+      port: 8761
+      targetPort: 8761
+  selector:
+    io.kompose.service: discovery
+status:
+  loadBalancer: {}

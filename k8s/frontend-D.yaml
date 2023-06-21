@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.yml --out k8s_f
+    kompose.version: 1.28.0 (c4137012e)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: frontend
+  name: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: frontend
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yml --out k8s_f
+        kompose.version: 1.28.0 (c4137012e)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/docker-eshopnet: "true"
+        io.kompose.service: frontend
+    spec:
+      containers:
+        - image: h4mdi/front-end:latest
+          name: frontend
+          ports:
+            - containerPort: 80
+          resources: {}
+      restartPolicy: Always
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: prod-cluster
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.yml --out k8s_f
+    kompose.version: 1.28.0 (c4137012e)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: frontend
+  name: service-2048
+spec:
+  type: NodePort
+  ports:
+    - name: "http"
+      port: 4200
+      targetPort: 80
+  selector:
+    io.kompose.service: frontend
+

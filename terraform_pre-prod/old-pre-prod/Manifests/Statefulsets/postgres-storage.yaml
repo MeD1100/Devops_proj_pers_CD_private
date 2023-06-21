@@ -1,0 +1,67 @@
+---
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: efs-sc
+provisioner: efs.csi.aws.com
+---
+apiVersion: v1
+kind: PersistentVolume  # Create a PV
+metadata:
+  name: efs-pv    # Sets PV's name
+spec:
+  capacity:
+    storage:  1Gi  # Sets PV Volume
+  volumeMode: Filesystem  
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: efs-sc
+  csi:
+    driver: efs.csi.aws.com
+    volumeHandle: fs-<Id-du-EFS-généré-sur-AWS>
+---
+kind: PersistentVolumeClaim  # Create PVC
+apiVersion: v1
+metadata:
+  namespace: staging
+  name: efs-claim  # Sets name of PV
+spec:
+  storageClassName: efs-sc
+  accessModes:
+    - ReadWriteMany  # Sets read and write access
+  resources:
+    requests:
+      storage:  1Gi   # Sets volume size
+      
+#Old one
+# kind: PersistentVolume  # Create a PV
+# apiVersion: v1
+# metadata:
+#   namespace: prod-cluster
+#   name: postgres-pv-volume    # Sets PV's name
+#   labels:
+#     type: local   # Sets PV's type to local
+#     app: postgres
+# spec:
+#   storageClassName: manual
+#   capacity:
+#     storage:  1Gi  # Sets PV Volume
+#   accessModes:
+#     - ReadWriteMany
+#   hostPath:
+#     path: "/mtd/data"  # Sets the volume's path
+# ---
+# kind: PersistentVolumeClaim  # Create PVC
+# apiVersion: v1
+# metadata:
+#   name: postgres-pv-claim  # Sets name of PV
+#   labels:
+#     app: postgres
+# spec:
+#   storageClassName: manual
+#   accessModes:
+#     - ReadWriteMany  # Sets read and write access
+#   resources:
+#     requests:
+#       storage:  1Gi   # Sets volume size

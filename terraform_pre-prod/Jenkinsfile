@@ -1,0 +1,337 @@
+pipeline{
+
+    agent any
+    
+    // parameters{
+    //     choice(name: 'ACTION', 
+    //            choices: ['plan','apply','delete'],
+    //            description: 'Run terraform Plan / Apply / Destroy')
+    //     choice(name: 'AWS_REGION',
+    //            choices: ['eu-west-3','us-east-1','eu-central-1'],
+    //            description: 'Pick a region defaults to eu-west-3')
+    //     string(name: 'ENV_NAME',
+    //            description: 'This will represent the environment or workspace or customer',
+    //            defaultValue: 'tf_pre_prod')
+    //     string(name: 'PROFILE',
+    //            description: 'write the AWS credential profile',
+    //            defaultValue: 'default')
+    //     string(name: 'CLUSTER_NAME',
+    //            description: 'Name of the EKS cluster',
+    //            defaultValue: 'pre-prod')
+    // }
+
+    environment{
+        VERSION = "${env.BUILD_ID}"
+        // AWS_ACCESS_KEY_ID = credentials('AWS_ACCESS_KEY_ID')
+        // AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
+    }
+
+    stages{
+
+        // stage('Unit Test maven'){
+        //     // when { expression { params.action == 'create'}}
+        //     steps{
+        //         script{
+
+        //             sh 'mvn test'
+        //         }
+        //     }
+        // }
+
+        // stage('Integration Test maven'){
+        //     when { expression { params.action == 'create'}}
+        //     steps{
+        //         script{
+
+        //             mvnIntegrationTest()
+        //         }
+        //     }
+        // }
+
+        // stage('Static code analysis: Sonarqube'){
+        //     // when { expression { params.action == 'create'}}
+        //     steps{
+        //         script{
+        //             withSonarQubeEnv(credentialsId: 'sonarqube-api') {
+        //                 sh "mvn clean package sonar:sonar \
+        //                     -Dsonar.host.url=http://52.91.206.152:9000/ \
+        //                     -Dsonar.projectKey=E_Shop-Sofia2023 \
+        //                     -Dsonar.projectName=E_Shop-Sofia2023 \
+        //                     -Dsonar.java.binaries=."
+        //             }
+        //         }
+        //     }
+        // }
+
+        // stage('Quality Gate Status Check: Sonarqube'){
+        //     // when { expression { params.action == 'create'}}
+        //     steps{
+        //         script{
+        //             waitForQualityGate abortPipeline: false, credentialsId: 'sonarqube-api'
+        //         }
+        //     }
+        // }
+
+        // stage('Maven Build: maven'){
+        //     // when { expression { params.action == 'create'}}
+        //     steps{
+        //         script{
+        //             sh 'mvn clean install'
+        //         }
+        //     }
+        // }   
+
+        // BLOCK FOR DOCKERHUB
+
+    //     stage('Docker Image Build & Scan & Push to Dockerhub') {
+    //      steps {
+    //         script {
+    //             def dockerHubUser = "medrh11"
+    //             def images = ["infrastructure/config", "infrastructure/discovery","infrastructure/gateway","services/analytics", "services/basket", "services/catalog","services/payment"]
+    //             for (def image in images) {
+    //                 dir(image) {
+    //                     def jarFile = "target/*.jar"
+    //                     if (jarFile) {
+    //                         def dockerImageName = "${image.substring(image.lastIndexOf('/') + 1)}"
+    //                         def scan_number = 0
+
+    //                         sh """
+    //                             docker image build -t ${dockerHubUser}/${dockerImageName} . 
+    //                             docker image tag ${dockerHubUser}/${dockerImageName} ${dockerHubUser}/${dockerImageName}:${VERSION}
+    //                             docker image tag ${dockerHubUser}/${dockerImageName} ${dockerHubUser}/${dockerImageName}:latest
+
+    //                             trivy image ${dockerHubUser}/${dockerImageName}:latest > scan.txt
+    //                             cat scan.txt   
+    //                         """
+
+    //                         sh ""
+
+    //                         withCredentials([usernamePassword(credentialsId: "docker", usernameVariable: "USER", passwordVariable: "PASS")]) {
+    //                             sh "docker login -u '$USER' -p '$PASS'"
+    //                         }
+    //                         sh """
+    //                             docker image push ${dockerHubUser}/${dockerImageName}:${VERSION}
+    //                             docker image push ${dockerHubUser}/${dockerImageName}:latest
+    //                         """
+    //                     } else {
+    //                         error "An error occurred. Please verify the existence of the JAR file for the ${image} image in the target folder."
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //      }
+    // }
+
+    // BLOCK FOR NEXUS
+
+        // stage('Docker Image Build & Scan & Push artifacts to Nexus') {
+        //  steps {
+        //     script {
+        //         def images = ["infrastructure/config", "infrastructure/discovery","infrastructure/gateway","services/analytics", "services/basket", "services/catalog","services/payment","services/order-grace-period-task","services/order-notifications"]
+        //         for (def image in images) {
+        //             dir(image) {
+        //                 def jarFile = "target/*.jar"
+        //                 if (jarFile) {
+        //                     def dockerImageName = "${image.substring(image.lastIndexOf('/') + 1)}"
+        //                     def scan_number = 0
+
+        //                     sh """
+        //                         docker image build -t 18.206.168.161:8083/${dockerImageName} . 
+        //                         docker image tag 18.206.168.161:8083/${dockerImageName} 18.206.168.161:8083/${dockerImageName}:${VERSION}
+                                
+        //                         trivy image 18.206.168.161:8083/${dockerImageName}:latest > scan.txt
+        //                         cat scan.txt   
+        //                     """
+
+        //                     withCredentials([string(credentialsId: 'nexus_passwd', variable: 'nexus_creds')]) {
+        //                         sh """
+        //                             docker login -u admin -p $nexus_creds 18.206.168.161:8083
+        //                             docker image push 18.206.168.161:8083/${dockerImageName}:${VERSION}
+        //                         """
+        //                     }
+
+        //                 } else {
+        //                     error "An error occurred. Please verify the existence of the JAR file for the ${image} image in the target folder."
+        //                 }
+        //             }
+        //         }
+        //     }
+        //  }
+        // }
+
+
+        stage('Terraform Init'){
+            // when { expression {  params.action == 'create' } }
+            steps{
+                script{
+                    withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding',
+                        credentialsId: "aws_sofia2023",
+                        accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                    ]]) {
+                        dir('terraform'){
+                            sh 'echo "yes" | terraform init' // -reconfigure
+                            sh "terraform plan --var-file=./config/0-terraform-testing.tfvars"
+                            sh 'echo "yes" | terraform apply --var-file=./config/0-terraform-testing.tfvars'
+                        }
+                    }
+                    
+                }
+            }
+        }
+
+        // stage('Terraform Plan'){
+        //     // when { expression {  params.action == 'create' } }
+        //     steps{ // Here, for this to work, we will set an IAM role that will make it possible for Jenkins to call AWS service on our behalf.
+        //         script{
+        //             withCredentials([[
+        //                 $class: 'AmazonWebServicesCredentialsBinding',
+        //                 credentialsId: "aws_sofia2023",
+        //                 accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+        //                 secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+        //             ]]) {
+        //             dir('terraform'){
+        //                      // -lock=false // incase of an error with lock file.
+        //             }
+        //          }
+        //         }
+        //       //              sh "terraform plan -out=plan.out -var 'region=${params.ProjectRegionAWS}' --var-file=./config/0-terraform-testing.tfvars"
+        //     } 
+        // }
+
+        // stage('Terraform Apply'){
+        //     // when { expression {  params.action == 'create' } }
+        //     steps{
+        //         withCredentials([[
+        //                 $class: 'AmazonWebServicesCredentialsBinding',
+        //                 credentialsId: "aws_sofia2023",
+        //                 accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+        //                 secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+        //             ]]) {
+        //         script{
+        //             dir('terraform'){
+        //                      // -lock=false // incase of an error with lock file.
+        //             }
+        //         }
+        //         }
+        //     }
+        // }
+
+        // stage('Connect to EKS'){ 
+        //     when { expression {  params.action == 'create' } }
+        //     steps{
+        //         script{
+        //             sh """
+        //             curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+        //             sudo apt-get install unzip -y
+        //             unzip awscliv2.zip
+        //             sudo ./aws/install
+        //             aws --version
+        //             aws configure set aws_access_key_id $ACCESS_KEY
+        //             aws configure set aws_secret_access_key $SECRET_KEY
+        //             aws configure set region ${params.ProjectRegionAWS}
+        //             aws eks update-kubeconfig --region ${params.ProjectRegionAWS} --name ${params.ClusterName} --profile ${params.AWS_Profile}
+        //             """
+        //         }
+        //     }
+        // }
+
+        
+        // Dunno IF I WILL SAVE THIS.
+        // stage('Identifying misconfigs using datree in helm charts'){
+
+        //     steps{ 
+        //         script{
+        //             dir('kubernetes/myapp'){
+        //                 withEnv(['DATREE_TOKEN=d5a46d29-d3e1-4148-a3a9-e0e2bd13c42b']){
+        //                     sh 'helm datree test .' 
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
+
+        // stage('Deployment on EKS Cluster'){
+        //     when { expression {  params.action == 'create' } }
+        //     steps{
+        //         script{
+        //             dir('CI-CD-SOFIA-PFE'){
+        //                 def apply = false
+
+        //                 try{
+        //                     input message: 'please confirm to deploy on EKS', ok: 'Ready to apply the config?'
+        //                     apply = true
+        //                 }catch(err){
+        //                     apply = false
+        //                     currentBuild.result = 'UNSTABLE'
+        //                 }
+        //                 if (apply){
+
+        //                     sh """
+        //                         kubectl apply -f ./k8s
+        //                     """
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
+
+        // stage('Delete Deployments'){
+        //     when { expression { params.action == 'destroy' } }
+        //     steps{
+
+        //         script{
+
+        //             def destroy = false
+        //             try{
+        //                 input message: 'please confirm the destroy to delete the deployments', ok: 'Ready to destroy the config?'
+        //                 destroy = true
+        //             }
+        //             catch(err){
+        //                 destroy = false
+        //                 currentBuild.result = 'UNSTABLE'
+        //             }
+        //             if (destroy){
+        //                 sh """
+        //                     kubectl delete -f ./k8s
+        //                     """
+        //             }
+        //         }
+        //     }
+
+        // }
+    // }
+
+    // stage('Terraform Destroy'){
+    //         // when { expression {  params.action == 'create' } }
+    //         steps{
+    //             withCredentials([[
+    //                     $class: 'AmazonWebServicesCredentialsBinding',
+    //                     credentialsId: "aws_sofia2023",
+    //                     accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+    //                     secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+    //                 ]]) {
+    //             script{
+    //                 dir('terraform'){
+    //                         sh "echo 'yes' | terraform destroy --var-file=./config/0-terraform-testing.tfvars"
+    //                 }
+    //             }
+    //          }
+    //         }
+    //     }
+
+
+
+    }
+
+    post{
+        success {
+            slackSend(color: "green", message: "Build deployed successfully - ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
+
+        }
+        failure {
+            slackSend (failOnError:true, color: "red", message:"Build failed - ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
+        }   
+    }
+}

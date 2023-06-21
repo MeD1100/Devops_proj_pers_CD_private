@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: staging
+  labels:
+    io.kompose.service: order-notifications
+  name: order-notifications
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: order-notifications
+  template:
+    metadata:
+      labels:
+        io.kompose.service: order-notifications
+    spec:
+      containers:
+        - name: order-notifications
+          image: h4mdi/order-notifications
+          env:
+            - name: CONFIG_SERVICE_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  name: global-config
+                  key: CONFIG_SERVICE_PASSWORD
+            - name: CONFIG_SERVICE_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: global-config
+                  key: CONFIG_SERVICE_USER
+            - name: EUREKA_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: global-config
+                  key: EUREKA_USER
+            - name: POSTGRES_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: global-config
+                  key: POSTGRES_USER
+            - name: SPRING_PROFILES_ACTIVE
+              valueFrom:
+                configMapKeyRef:
+                  name: global-config
+                  key: SPRING_PROFILES_ACTIVE
+          resources: {}
+      restartPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-notifications
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8085
+      targetPort: 8085
+  selector:
+    app: order-notifications

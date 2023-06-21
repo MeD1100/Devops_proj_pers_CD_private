@@ -2,14 +2,16 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   namespace: prod-cluster
-  name: ingress-2049
+  name: nginx-2048-ingress
   annotations:
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
+    cert-manager.io/cluster-issuer: letsencrypt-staging
 spec:
   ingressClassName: alb
   rules:
-    - http:
+    - host: test4pp.tech
+      http:
         paths:
           - path: /
             pathType: Prefix
@@ -17,4 +19,9 @@ spec:
               service:
                 name: frontend
                 port:
-                  number: 80
+                  number: 4200
+  tls:
+    - hosts:
+        - test4pp.tech
+      secretName:  letsencrypt-staging
+

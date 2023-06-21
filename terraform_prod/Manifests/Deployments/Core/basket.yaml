@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: prod-cluster
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.services.yml --out k8s_2
+    kompose.version: 1.28.0 (c4137012e)
+  labels:
+    io.kompose.service: basket
+  name: basket
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: basket
+  template:
+    metadata:
+      labels:
+        app: basket
+    spec:
+      containers:
+        - name: basket
+          image: h4mdi/basket:latest
+          env:
+            - name: CONFIG_SERVICE_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  name: global-config
+                  key: CONFIG_SERVICE_PASSWORD
+            - name: CONFIG_SERVICE_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: global-config
+                  key: CONFIG_SERVICE_USER
+            - name: EUREKA_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: global-config
+                  key: EUREKA_USER
+            - name: POSTGRES_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: global-config
+                  key: POSTGRES_USER
+            - name: SPRING_PROFILES_ACTIVE
+              valueFrom:
+                configMapKeyRef:
+                  name: global-config
+                  key: SPRING_PROFILES_ACTIVE
+          resources: {}
+      restartPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: basket
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8082
+      targetPort: 8082
+  selector:
+    app: basket

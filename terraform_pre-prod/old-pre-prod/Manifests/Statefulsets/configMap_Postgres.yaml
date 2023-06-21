@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: staging
+data:
+  catalog-db-password: dbpass
+  keycloak-db-password: dbpass
+  order-db-password: dbpass
+  postgres-password: dbpass

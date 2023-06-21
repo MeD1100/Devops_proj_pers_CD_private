@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  namespace: prod-cluster
+  name: postgres
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: h4mdi/postgres
+          ports:
+            - containerPort: 5432
+          env:
+            - name: CATALOG_DB_NAME
+              value: catalogdb
+            - name: CATALOG_DB_PASSWORD
+              value: dbpass
+            - name: CATALOG_DB_USER
+              value: catalogdbuser
+            - name: KEYCLOAK_DB_NAME
+              value: keycloakdb
+            - name: KEYCLOAK_DB_PASSWORD
+              value: dbpass
+            - name: KEYCLOAK_DB_USER
+              value: keycloak
+            - name: ORDER_DB_NAME
+              value: orderdb
+            - name: ORDER_DB_PASSWORD
+              value: dbpass
+            - name: ORDER_DB_USER
+              value: orderdbuser
+            - name: PGTZ
+              value: Europe/Amsterdam
+            - name: POSTGRES_PASSWORD
+              value: dbpass
+            - name: POSTGRES_USER
+              value: dbuser
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: postgredb
+      volumes:
+        - name: postgredb
+          persistentVolumeClaim:
+            claimName: postgres-pv-claim
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose-global.yml --out k8s
+    kompose.version: 1.28.0 (c4137012e)
+  creationTimestamp: null
+  labels:
+    app: postgres
+  name: postgres
+spec:
+  ports:
+    - name: "5432"
+      port: 5432
+      targetPort: 5432
+  selector:
+    app: postgres
+status:
+  loadBalancer: {}
+

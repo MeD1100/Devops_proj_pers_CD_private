@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: global-config
+  namespace: prod-cluster
+data:
+  config-service-password: cfg-password
+  config-service-user: user
+  eureka-user: user
+  postgres-user: dbuser
+  spring-profiles-active: docker

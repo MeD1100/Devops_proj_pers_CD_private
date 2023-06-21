@@ -51,11 +51,10 @@ metadata:
 spec:
   ingressClassName: alb
   rules:
-    - host: service-a.devopsbyexample.io
-      http:
+    - http:
         paths:
-          - path: /
-            pathType: Exact
+          - path: /service-a
+            pathType: Prefix
             backend:
               service:
                 name: echoserver
@@ -114,13 +113,157 @@ metadata:
 spec:
   ingressClassName: alb
   rules:
-    - host: service-b.devopsbyexample.io
-      http:
+    - http:
         paths:
-          - path: /
-            pathType: Exact
+          - path: /service-b
+            pathType: Prefix
             backend:
               service:
                 name: echoserver
+                port:
+                  number: 80
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: 2-example-game-2048
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: 2-example-game-2048
+  name: deployment-2048
+spec:
+  selector:
+    matchLabels:
+      app: app-2048
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: app-2048
+    spec:
+      containers:
+      - image: public.ecr.aws/l6m2t8p7/docker-2048:latest
+        name: app-2048
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: 2-example-game-2048
+  name: service-2048
+spec:
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+  type: NodePort
+  selector:
+    app: app-2048
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  namespace: 2-example-game-2048
+  name: ingress-2048
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/group.name: 2-example
+    alb.ingress.kubernetes.io/group.order: '3'
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          - path: /game
+            pathType: Prefix
+            backend:
+              service:
+                name: service-2048
+                port:
+                  number: 80
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: 2-example-front
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: 2-example-front
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.yml --out k8s_f
+    kompose.version: 1.28.0 (c4137012e)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: frontend
+  name: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-2048
+      io.kompose.service: frontend
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yml --out k8s_f
+        kompose.version: 1.28.0 (c4137012e)
+      creationTimestamp: null
+      labels:
+        app: app-2048
+        io.kompose.network/docker-eshopnet: "true"
+        io.kompose.service: frontend
+    spec:
+      containers:
+      - image: h4mdi/front-end:latest
+        name: frontend
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: 2-example-front
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.yml --out k8s_f
+    kompose.version: 1.28.0 (c4137012e)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: frontend
+  name: frontend
+spec:
+  ports:
+    - name: "http"
+      port: 4200
+      targetPort: 80
+      protocol: TCP
+  type: NodePort
+  selector:
+    io.kompose.service: frontend
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  namespace: 2-example-front
+  name: ingress-frontend
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/group.name: 2-example
+    alb.ingress.kubernetes.io/group.order: '4'
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          - path: /front
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
                 port:
                   number: 80

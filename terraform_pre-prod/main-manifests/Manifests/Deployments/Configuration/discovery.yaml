@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: discovery-config
+  namespace: prod-cluster
+data:
+  CONFIG_SERVICE_PASSWORD: cfg-password
+  CONFIG_SERVICE_USER: user
+  EUREKA_USER: user
+  SPRING_PROFILES_ACTIVE: docker
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: prod-cluster
+  labels:
+    io.kompose.service: discovery
+  name: discovery
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: discovery
+  template:
+    metadata:
+      labels:
+        io.kompose.service: discovery
+    spec:
+      containers:
+        - name: discovery
+          image: h4mdi/discovery
+          env:
+            - name: CONFIG_SERVICE_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  name: discovery-config
+                  key: CONFIG_SERVICE_PASSWORD
+            - name: CONFIG_SERVICE_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: discovery-config
+                  key: CONFIG_SERVICE_USER
+            - name: EUREKA_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: discovery-config
+                  key: EUREKA_USER
+            - name: SPRING_PROFILES_ACTIVE
+              valueFrom:
+                configMapKeyRef:
+                  name: discovery-config
+                  key: SPRING_PROFILES_ACTIVE
+          ports:
+            - containerPort: 8761
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose-global.yml --out k8s
+    kompose.version: 1.28.0 (c4137012e)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: discovery
+  name: discovery
+spec:
+  ports:
+    - name: "8761"
+      port: 8761
+      targetPort: 8761
+  selector:
+    io.kompose.service: discovery
+status:
+  loadBalancer: {}

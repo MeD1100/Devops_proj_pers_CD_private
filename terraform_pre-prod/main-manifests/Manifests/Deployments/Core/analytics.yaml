@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: prod-cluster
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.services.yml --out k8s_2
+    kompose.version: 1.28.0 (c4137012e)
+  labels:
+    io.kompose.service: analytics
+  name: analytics
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: analytics
+  template:
+    metadata:
+      labels:
+        app: analytics
+    spec:
+      containers:
+        - name: analytics
+          image: h4mdi/analytics
+          env:
+            - name: CONFIG_SERVICE_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  name: global-config
+                  key: CONFIG_SERVICE_PASSWORD
+            - name: CONFIG_SERVICE_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: global-config
+                  key: CONFIG_SERVICE_USER
+            - name: EUREKA_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: global-config
+                  key: EUREKA_USER
+            - name: POSTGRES_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: global-config
+                  key: POSTGRES_USER
+            - name: SPRING_PROFILES_ACTIVE
+              valueFrom:
+                configMapKeyRef:
+                  name: global-config
+                  key: SPRING_PROFILES_ACTIVE
+          resources: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: analytics
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8083
+      targetPort: 8083
+  selector:
+    app: analytics
