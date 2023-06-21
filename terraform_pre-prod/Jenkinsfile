@@ -159,8 +159,32 @@ pipeline{
         //  }
         // }
 
+        stage('Terraform initializing S3 Bucket (first time use only)'){
+            // Do it, then uncomment S3 backend code, initialize again, plan and apply. S3 is then ready to use. Procceed with the project.
+            steps{
+                script{
+                    withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding',
+                        credentialsId: "aws_sofia2023",
+                        accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                    ]]) {
+                        dir('terraform'){
+                            //Comment S3 backend provider block
+                            sh 'echo "yes" | terraform init' // -reconfigure
+                            sh "terraform plan -target='aws_s3_bucket.demo-bucket' --var-file=./config/0-terraform-testing.tfvars -out='/tmp/tfplan-s3'" //terraform plan " -out=/tmp/tfplan
+                            sh "echo 'yes' | terraform apply '/tmp/tfplan-s3' --var-file=./config/0-terraform-testing.tfvars" //terraform apply "/tmp/tfplan"
+                            sh "terraform plan -target='aws_dynamodb_table.statelock' -out='tfplan-statelock' --var-file=./config/0-terraform-testing.tfvars"
+                            sh "echo 'yes' | terraform apply '/tmp/tfplan-statelock' --var-file=./config/0-terraform-testing.tfvars"
+                        }
+                    }
+                    
+                }
+            }
+        }
 
-        stage('Terraform Init'){
+
+        stage('Terraform Init & Plan'){
             // when { expression {  params.action == 'create' } }
             steps{
                 script{
@@ -171,9 +195,9 @@ pipeline{
                         secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                     ]]) {
                         dir('terraform'){
-                            sh 'echo "yes" | terraform init' // -reconfigure
-                            sh "terraform plan --var-file=./config/0-terraform-testing.tfvars"
-                            sh 'echo "yes" | terraform apply --var-file=./config/0-terraform-testing.tfvars'
+                            //Now uncomment S3 backend block in provider.tf file
+                            sh "echo 'yes' | terraform init"
+                            sh "terraform plan -out='/tmp/tfplan-pre-prod' --var-file=./config/0-terraform-testing.tfvars"
                         }
                     }
                     
@@ -181,42 +205,59 @@ pipeline{
             }
         }
 
-        // stage('Terraform Plan'){
-        //     // when { expression {  params.action == 'create' } }
-        //     steps{ // Here, for this to work, we will set an IAM role that will make it possible for Jenkins to call AWS service on our behalf.
-        //         script{
-        //             withCredentials([[
-        //                 $class: 'AmazonWebServicesCredentialsBinding',
-        //                 credentialsId: "aws_sofia2023",
-        //                 accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-        //                 secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-        //             ]]) {
-        //             dir('terraform'){
-        //                      // -lock=false // incase of an error with lock file.
-        //             }
-        //          }
-        //         }
-        //       //              sh "terraform plan -out=plan.out -var 'region=${params.ProjectRegionAWS}' --var-file=./config/0-terraform-testing.tfvars"
-        //     } 
-        // }
+        stage('Terraform Approval'){
+            // when { expression {  params.action == 'create' } }
+            steps{
+                withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding',
+                        credentialsId: "aws_sofia2023",
+                        accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                    ]]) {
 
-        // stage('Terraform Apply'){
-        //     // when { expression {  params.action == 'create' } }
-        //     steps{
-        //         withCredentials([[
-        //                 $class: 'AmazonWebServicesCredentialsBinding',
-        //                 credentialsId: "aws_sofia2023",
-        //                 accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-        //                 secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-        //             ]]) {
-        //         script{
-        //             dir('terraform'){
-        //                      // -lock=false // incase of an error with lock file.
-        //             }
-        //         }
-        //         }
-        //     }
-        // }
+                sh 'terraform show -no-color /tmp/tfplan-pre-prod > tfplan-pre-prod.txt'
+                script{
+                    def plan = readFile 'tfplan-pre-prod.txt'
+                    dir('terraform'){
+                        input message: "Apply the plan?",
+                        parameters: [text(name: 'Plan', description: 'Please review the plan', defaultValue: plan)]
+                    }
+                }
+                }
+            }
+        }
+
+        stage('Terraform Apply'){
+            // when { expression {  params.action == 'create' } }
+            steps{
+                withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding',
+                        credentialsId: "aws_sofia2023",
+                        accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                    ]]) {
+
+                sh 'terraform show -no-color /tmp/tfplan-pre-prod > tfplan-pre-prod.txt'
+                script{
+                    def plan = readFile 'tfplan-pre-prod.txt'
+                    dir('terraform'){
+                        sh "echo 'yes' | terraform apply '/tmp/tfplan-pre-prod'"
+                    }
+                }
+                }
+            }
+        }
+
+        stage('Configure EKS to use Fargate not EC2'){
+            steps{
+                script{ //kubectl logs -f -n kube-system -l app.kubernetes.io/name=aws-load-balancer-controller //check-for-errors-if-there-is-any
+                    sh """ 
+                        aws eks update-kubeconfig --name pre-prod --region us-east-1
+                        kubectl patch deployment coredns -n kube-system --type json -p="[{\"op\": \"remove\", \"path\": \"/spec/template/metadata/annotations/eks.amazonaws.com~1compute-type\"}]"'
+                    """
+                }
+            }
+        }
 
         // stage('Connect to EKS'){ 
         //     when { expression {  params.action == 'create' } }
@@ -239,18 +280,18 @@ pipeline{
 
         
         // Dunno IF I WILL SAVE THIS.
-        // stage('Identifying misconfigs using datree in helm charts'){
+        stage('Identifying misconfigs using datree in helm charts'){
 
-        //     steps{ 
-        //         script{
-        //             dir('kubernetes/myapp'){
-        //                 withEnv(['DATREE_TOKEN=d5a46d29-d3e1-4148-a3a9-e0e2bd13c42b']){
-        //                     sh 'helm datree test .' 
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
+            steps{ 
+                script{
+                    dir('k8s'){
+                        withEnv(['DATREE_TOKEN=']){
+                            sh 'helm datree test .' 
+                        }
+                    }
+                }
+            }
+        }
 
         // stage('Deployment on EKS Cluster'){
         //     when { expression {  params.action == 'create' } }

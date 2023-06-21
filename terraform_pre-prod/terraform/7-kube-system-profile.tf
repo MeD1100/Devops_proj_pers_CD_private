@@ -36,7 +36,9 @@ resource "aws_eks_fargate_profile" "kube-system" {
 }
 
 #---------------------
-# Configured this manually, so i'm going to comment this section for now.
+# We will configure this section manually in JENKINSFILE in order to change EKS from manipulating EC2 to Fargate, 
+# so i'm going to comment this section as there is misconfiguration here.
+#---------------------
 
 # data "aws_eks_cluster_auth" "eks" {
 #   name = aws_eks_cluster.cluster.id
