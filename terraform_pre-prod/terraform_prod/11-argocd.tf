@@ -18,6 +18,9 @@ resource "helm_release" "argocd" {
 // kubectl get secrets -n argocd
 // kubectl get secrets argocd-initial-admin-secret -o yaml -n argocd
 // echo "paste_ur_password_here" | base64 -d
-// kubectl port-forward svc/argocd-server -n argocd 8090:80
-// Open localhost:8090 in the browser
+// kubectl port-forward svc/argocd-server -n argocd 8091:80
+// Open localhost:8091 in the browser
 //---------------------------------------------------------------------------
+//----------------- Add metrics server to ArgoCD ----------------------------
+// helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
+// helm search repo metrics-server
