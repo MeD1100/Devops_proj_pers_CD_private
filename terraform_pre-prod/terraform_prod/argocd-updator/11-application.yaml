@@ -9,9 +9,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/MeD1100/Devops_proj_pers_CD_private.git
-    targetRevision: HEAD
-    path: terraform_pre-prod/terraform_prod/argocd-updator
+    repoURL: "https://github.com/MeD1100/Devops_proj_pers_CD_private.git"
+    targetRevision: prod
+    path: terraform_pre-prod/terraform_prod/k8s
   destination:
     server: https://kubernetes.default.svc
 
