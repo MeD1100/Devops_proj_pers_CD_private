@@ -4,16 +4,17 @@ kind: Application
 metadata:
   name: my-app
   namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
+  # finalizers:
+  #   - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
   source:
     repoURL: https://github.com/MeD1100/Devops_proj_pers_CD_private.git
     targetRevision: HEAD
-    path: terraform_pre-prod/terraform_prod/k8s
+    path: terraform_pre-prod/terraform_prod/argocd-updator
   destination:
     server: https://kubernetes.default.svc
+
   # syncPolicy:
   #   automated:
   #     prune: true
